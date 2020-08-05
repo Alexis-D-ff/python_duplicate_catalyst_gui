@@ -1,0 +1,5 @@
+log_file.log
+/.vscode
+/.tmp.driveupload
+/__pycache__
+/gui_scripts/__pycache__
