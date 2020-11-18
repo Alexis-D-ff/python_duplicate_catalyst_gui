@@ -1,3 +1,4 @@
+import tkinter
 from tkinter import ttk
 import tkinter as tk
 import threading
@@ -21,11 +22,12 @@ class Buttons(ttk.Frame):
         self.__fnavigator = fnavigator
         self.__dnavigator = dnavigator
         self.prog_bar = prog_bar
+        self.kill = threading.Event()
         
         s = ttk.Style()
         s.configure('my.TButton', font=('Segoe UI', 9), anchor='center',)
-        self.background_label = tk.Label(self)
-        self.background_label.grid(row=0, column=0, columnspan=2, pady=(0,0))
+        #self.background_label = tk.Label(self)
+        #self.background_label.grid(row=0, column=0, columnspan=2, pady=(0,0))
         
         self.folder_opener = ttk.Button(self,
                              text="Open Folder",
@@ -38,14 +40,16 @@ class Buttons(ttk.Frame):
                              text="Find Duplicates",
                              command=lambda: self.thread_func(self.scan_duplicates),
                              width=30,
-                             style='my.TButton')
+                             style='my.TButton',
+                             state='disabled',)
         self.find_duplicates.grid(row=2,column=0, columnspan=2, sticky='nsew', pady=(0,15), padx=(20,20), ipady=5, ipadx=5)
         
         self.delete_file = ttk.Button(self,
                              text="Delete Selected File(s)",
-                             command=lambda: self.thread_func(self.parse_selected),
+                             command=lambda: self.thread_func(self.file_remove),
                              width=30,
-                             style='my.TButton')
+                             style='my.TButton',
+                             state='disabled',)
         self.delete_file.grid(row=3,column=0, columnspan=2, sticky='nsew', pady=(0,15), padx=(20,20), ipady=5, ipadx=5)
         
         self.open_log = ttk.Button(self,
@@ -69,23 +73,45 @@ class Buttons(ttk.Frame):
                         self.delete_file,
                         )
 
+    def __get_buttons_state(self):
+        buttons = (self.folder_opener,
+                        self.find_duplicates,
+                        self.delete_file,
+                        self.delete_file,
+                        self.open_log)
+        buttons_state = 5
+
     def thread_func(self, target_func):
         """
         This method generates a thread for each called function when the proper button is pressed.
         Threads are needed to get rid of app freezing during some function execution.
         """
+        
         # Call a work function
         self.func = threading.Thread(target=target_func, daemon = True)
         self.func.start()
         # Disable all buttons except of the "EXIT"
         for button in self.buttons:
             button.state(["disabled"])
-        self.open_log.state(["disabled"])
+        
+        self.log_button_state_switch()
 
+    def open_log_file(self):
+        
+        try:
+            os.startfile('log_file.log')
+        except:
+            pass
+    
     def open_folder(self):
         """
         This method handles opening of a folder for ttk fnavigator treeview widget
         """
+        
+        # Explicitly gray out the exit and Log Access buttons, when the directory choice window is active
+        self.exit.state(["disabled"])
+        self.open_log.state(["disabled"])
+        
         folder_select = filedialog.askdirectory(initialdir = "/",
                                 title = "Select a Folder with standards",
                                 )
@@ -94,11 +120,14 @@ class Buttons(ttk.Frame):
             func = threading.Thread(target=self.prog_bar.starting, daemon = True)
             func.start()
             self.__fnavigator.set_folder(folder_select)
-            self.__dnavigator.insert_message(self.__dnavigator.default_text)
-        # Enable all buttons
-        for button in self.buttons:
-            button.state(["!disabled"])
-            
+            self.__dnavigator.insert_delete_message(self.__dnavigator.default_text)
+        
+            # Enable all buttons
+            for button in self.buttons:
+                button.state(["!disabled"])
+        self.exit.state(["!disabled"])
+        self.folder_opener.state(["!disabled"])
+        
         # Stop the progress bar and ungrid it
         self.prog_bar.stoping()
     
@@ -113,31 +142,54 @@ class Buttons(ttk.Frame):
                 func.start()
                 duplicates = self.__dnavigator.find_duplicates(directories)
                 self.__dnavigator.fill_treeview(duplicates)
-                #self.__fnavigator.update_duplicates(duplicates)
             else:
                 pass
             
         for button in self.buttons:
             button.state(["!disabled"])
-
+            
+        self.log_button_state_switch()
+        
+        self.prog_bar.stoping()
+    
+    def log_button_state_switch(self):
         try:
-            if pathlib.Path('log_file.log').stat().st_size != 0:
+            if pathlib.Path('log_file.log').stat().st_size == 0:
+                self.open_log.state(["disabled"])
+            else:
                 num_lines = sum(1 for line in open('log_file.log'))
                 self.open_log['text'] = f"Access Permission Log ({num_lines})"
                 self.open_log.state(["!disabled"])
         except:
             pass
-        
-        self.prog_bar.stoping()
     
-    def open_log_file(self):
-        
+    def file_remove(self):
+        # Filter out empty selections
         try:
-            os.startfile('log_file.log')
-            
-        except:
+            for item in self.__dnavigator._duplicates_tree.selection():
+                item_obj = self.__dnavigator._duplicates_tree.item(item)
+                if item_obj['tags'][0] == 'file_path':
+                        try:
+                            path_obj = pathlib.Path(item)
+                            os.remove(path_obj)
+                            self.__dnavigator._duplicates_tree.delete(item)
+                            # If the path was never accessed in the file_navigator_tree, it doesn't exist there
+                            # so skip if nothing to delete
+                            try:
+                                self.__fnavigator._tree.delete(item)
+                            except tkinter.TclError:
+                                pass
+                        except (OSError, PermissionError):
+                            # CALL ERROR MESSAGE WINDOW
+                            pass 
+        
+        except AttributeError:
             pass
-    
+            
+        for button in self.buttons:
+            button.state(["!disabled"])
+        self.prog_bar.stoping()
+        
     def something(self):
         """
         This method handles the file analysis (name analysis, web parsing, report reloading) of the whole selected root folder

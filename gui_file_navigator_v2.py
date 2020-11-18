@@ -3,16 +3,21 @@ import tkinter as tk
 import os
 import pathlib
 from recursive_scandir_v3 import recursive_scandir
+from icon_loader import file_image_loader, directory_image_loader, unknown_icon_loader
 
 class File_Navigator(ttk.Frame):
     """
     This is the main TreeView widget of the GUI. It visualizes the directory content.
     """
-    def __init__(self, filler, directory=None):
+    def __init__(self, filler):#, directory=None):
         """
         Attributes:
         ----------
-        directory 
+        filler: object
+            tkinter filler widget object, spawned at app starting
+        
+        directory
+
         """
         ttk.Frame.__init__(self)
         s = ttk.Style()
@@ -21,25 +26,22 @@ class File_Navigator(ttk.Frame):
         s.map('Treeview', background=[('selected', '#6d6087')])
         
         self.filler = filler
-        self.image_loader()
+        self.img_dict = file_image_loader()
+        self.unknown_ext_icon = unknown_icon_loader()
+        self.directory_icon = directory_image_loader()
         
-        
-        self._directory = directory
+        #self._directory = directory
         self.file_after_renaming = ''
         
         self._tree = ttk.Treeview(self)
-        #self._tree['column'] = [*range(1)]
         self._tree.column('#0', anchor='center', stretch='yes', width=900)
-
         self._tree.heading('#0', text='Double Click to open file or Alt+DoubleClick to open containing folder', anchor='w')
-        #self._tree.heading(0, text='Duplicates')
 
         self.toggle = False
         self.toggle_single = False
-        self._tree.bind('<Double-Button-1>', self.clicked_refresh)
-        self._tree.bind('<Button-1>', self.indicator_expand)
-        self._tree.bind('<Double-Button-1>', lambda x: self.opening_object('file'))
-        self._tree.bind('<Alt-Double-Button-1>', lambda x: self.opening_object('folder'))
+        self._tree.bind('<Double-Button-1>', lambda x: self.open_or_refresh('file'))
+        self._tree.bind('<Button-1>', self.expand_scan_dirs)
+        self._tree.bind('<Alt-Double-Button-1>', lambda x: self.open_or_refresh('folder'))
         
         self._tree['show'] = 'headings tree'
         tree_y_scroll_bar = ttk.Scrollbar(self, command=self._tree.yview, orient='vertical')
@@ -47,41 +49,29 @@ class File_Navigator(ttk.Frame):
         self._tree.config(yscrollcommand=tree_y_scroll_bar.set)
         self._tree.pack(side='left', fill="both", expand=True)
     
-    def image_loader(self):
-        
-        def image_wrapper(path: str):
-            norm_path = os.path.normpath(path)
-            return tk.PhotoImage(file=norm_path)
-                
-        self.folder_img = image_wrapper(r'images\folder.png')
-        img_img = image_wrapper(r'images\img.png')
-        pdf_img = image_wrapper(r'images\pdf.png')
-        txt_img = image_wrapper(r'images\txt.png')
-        word_img = image_wrapper(r'images\word.png')
-        xl_img = image_wrapper(r'images\xl.png')
-        self.unkwn_img = image_wrapper(r'images\unkn.png')
-        
-        self.icon = {".png": img_img, ".jpg": img_img, ".jpeg": img_img, ".tif": img_img, ".tiff": img_img, ".gif": img_img, ".ico": img_img,
-                     ".pdf": pdf_img,
-                     ".txt": txt_img, ".py": txt_img, ".csv": txt_img,
-                     ".doc": word_img, ".docx": word_img,
-                     ".xls": xl_img, ".xlsx": xl_img,
-                     }
-    
     def set_folder(self, folder):
         self._directory = pathlib.Path(folder)
         self.refresh()
         self.grid(row=0,column=0, rowspan=2, padx=20, pady=(20,0), sticky='nsew')
     
-    def clicked_refresh(self, event=None):
+    def open_or_refresh(self, object, event=None):
         selected_object = self._tree.item(self._tree.focus())
         if selected_object['tags'][0] == 'Directory':
             self.refresh(clicked_directory=selected_object)
             self.expand_directory(selected_object)
         
+        else:
+            selected_file_path = selected_object['tags'][2] if object == 'file' else pathlib.Path(selected_object['tags'][2]).parent
+            
+            # Filter out the OS access errors. If it doesn't open - c'est la vie :)
+            try:
+                os.startfile(selected_file_path)
+            except OSError:
+                pass
+        
         return 'break'
     
-    def indicator_expand(self, event=None):
+    def expand_scan_dirs(self, event=None):
         if self._tree.identify_element(event.x, event.y) == 'Treeitem.indicator':
             selected_object = self._tree.item(self._tree.identify_row(event.y))
             self.refresh(clicked_directory=selected_object)
@@ -100,7 +90,7 @@ class File_Navigator(ttk.Frame):
                           index="end",
                           iid=root_directory,
                           text=root_directory,
-                          image=self.folder_img,
+                          image=self.directory_icon,
                           open=True,
                           tags=("Directory", "root", root_directory))
         
@@ -111,7 +101,7 @@ class File_Navigator(ttk.Frame):
                                     index="end",
                                     iid=object.path,
                                     text=object.name,
-                                    image=self.folder_img,
+                                    image=self.directory_icon,
                                     open=False,
                                     tags=("Directory", "\\", object.path),
                                     )
@@ -122,7 +112,8 @@ class File_Navigator(ttk.Frame):
                                     index="end",
                                     iid=object.path,
                                     text=object.name,
-                                    image=self.icon.get(file_extension) if self.icon.get(file_extension) else self.unkwn_img,
+                                    image=self.img_dict.get(file_extension) if self.img_dict.get(file_extension)
+                                                        else self.unknown_ext_icon,
                                     tags=("File", file_extension, object.path)
                                     )
     
@@ -159,7 +150,6 @@ class File_Navigator(ttk.Frame):
         
         return 'break'
     
-    
     def opening_object(self, object, event=None):
         selected_object = self._tree.item(self._tree.focus())['tags']
         selected_obj_type = selected_object[0]
@@ -169,15 +159,3 @@ class File_Navigator(ttk.Frame):
             os.startfile(selected_file_path)
         
         return 'break'
-    
-    def update_duplicates(self, duplicates):
-        for _, paths in duplicates.items():
-            for path in paths:
-                    self._duplicates_tree.insert(parent=hash,
-                                                 index='end',
-                                                 iid=path,
-                                                 text=f'📜 {path}',
-                                                 open='yes',
-                                                 tags=('file_path', pathlib.Path(path)),
-                                                 )
-                    path_str_max_length = max(path_str_max_length, len(path))

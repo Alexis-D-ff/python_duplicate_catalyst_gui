@@ -10,7 +10,7 @@ import sys
 import threading
 from ctypes import windll
 from collections import defaultdict
-from recursive_scandir import recursive_scandir
+from recursive_scandir_v3 import recursive_scandir
 from read_and_hash import read_and_hash
 
 
@@ -64,7 +64,7 @@ class FileNavigator(ttk.Frame):
 
         self.toggle = False
         self.toggle_single = False
-        #self._tree.bind('<Double-Button-1>', self.collapse)
+        self._tree.bind('<Double-Button-1>', self.collapse)
         #self._tree.bind('<<TreeviewSelect>>', self.show_details)
         #self._tree.bind('<Alt-Double-Button-1>', self.opening_file)
         
@@ -79,49 +79,92 @@ class FileNavigator(ttk.Frame):
         self.refresh()
         self.grid(row=0,column=0, rowspan=2, padx=20, pady=(20,0), sticky='nsew')
         
-    def refresh(self, a=self._directory):
+    def refresh(self, clicked_directory=False):
+        root_directory = clicked_directory if clicked_directory else self._directory
         self._tree
         self._tree.delete(*self._tree.get_children())
         self._tree.insert(parent="",
                           index="end",
-                          iid=self._directory,
-                          text=self._directory,
+                          iid=root_directory,
+                          text=root_directory,
                           image=self.folder_img,
                           open=True,
-                          tags=("Directory", "root", a))
+                          tags=("Directory", "root", root_directory))
         
-        for single_object in recursive_scandir(self._directory):
-            if single_object.is_dir():
-                directory_parent = pathlib.Path(single_object.path).parent
+        
+        # recurs_iter = recursive_scandir(root_directory)
+        # object = next(recurs_iter)
+        for object in recursive_scandir(root_directory):
+            if object.is_dir():
+                directory_parent = pathlib.Path(object.path).parent
                 self._tree.insert(parent=directory_parent,
                                     index="end",
-                                    iid=single_object.path,
-                                    text=single_object.name,
+                                    iid=object.path,
+                                    text=object.name,
                                     image=self.folder_img,
                                     open=False,
-                                    tags=("Directory", "\\", single_object),
+                                    tags=("Directory", "\\", object),
                                     )
             else:
-                file_parent = pathlib.Path(single_object.path).parent
-                file_extension = pathlib.Path(single_object.path).suffix
+                file_parent = pathlib.Path(object.path).parent
+                file_extension = pathlib.Path(object.path).suffix
                 self._tree.insert(parent=file_parent,
-                                  index="end",
-                                  iid=single_object.path,
-                                  text=single_object.name,
-                                  values=(1,
-                                          2,
-                                          3,
-                                          4,
-                                          5,
-                                          ),
-                                  image=self.icon.get(file_extension) if self.icon.get(file_extension) else self.unkwn_img,
-                                  tags=("File", file_extension, single_object.path)
-                                  )
-
-            
-        return 1
-        for root, directories, files in os.walk(self._directory, topdown=True):
-            print(root, directories, files)
+                                    index="end",
+                                    iid=object.path,
+                                    text=object.name,
+                                    values=(1,
+                                            2,
+                                            3,
+                                            4,
+                                            5,
+                                            ),
+                                    image=self.icon.get(file_extension) if self.icon.get(file_extension) else self.unkwn_img,
+                                    tags=("File", file_extension, object.path)
+                                    )
+    
+    def collapse(self, event=None):
+        if self._tree.identify_column(event.x) == '#0' and self._tree.identify_region(event.x, event.y) == 'heading':
+            main_folder = self._tree.get_children()[0]
+            def open_children(parent):
+                self._tree.item(parent, open=True)
+                for child in self._tree.get_children(parent):
+                    open_children(child)
+            def close_children(parent):
+                for child in self._tree.get_children(parent):
+                    self._tree.item(child, open=False)
+                    close_children(child)
+                    
+            def handleOpenEvent():
+                self.toggle = not self.toggle
+                if self.toggle:
+                    open_children(main_folder)
+                else:
+                    close_children(main_folder)
+            handleOpenEvent()
+        if self._tree.identify_column(event.x) == '#0' and self._tree.identify_region(event.x, event.y) != 'heading':
+            rowID = self._tree.identify('item', event.x, event.y)
+            def open_children(parent):
+                self._tree.item(parent, open=True)
+                for child in self._tree.get_children(parent):
+                    open_children(child)
+            def close_children(parent):
+                for child in self._tree.get_children(parent):
+                    self._tree.item(child, open=False)
+                    close_children(child)
+                    
+            def handleOpenEvent():
+                if self._tree.item(rowID)['open'] != True:
+                    open_children(rowID)
+                else:
+                    self.toggle_single = not self.toggle_single
+                    if self.toggle_single:
+                        open_children(rowID)
+                    else:
+                        close_children(rowID)
+            if self._tree.item(rowID)['tags'][0] == 'Directory':
+                handleOpenEvent()
+            return 'break'
+        for root, directories, files in os.walk(root_directory, topdown=True):
             for name in directories:
                 self._tree.insert(parent=root,
                                   index="end",
@@ -133,7 +176,6 @@ class FileNavigator(ttk.Frame):
                                   )
             for name in files:
                 fullpath = os.path.normpath(os.path.join(root, name))
-                
                 extension = os.path.splitext(name)[1]
                 self._tree.insert(parent=root,
                                   index="end",
