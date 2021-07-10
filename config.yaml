@@ -1,0 +1,83 @@
+#  Author: Alexis Domashenkoff
+#  https://www.linkedin.com/in/dmshnkff/
+#  https://github.com/Mwave-AD/python_duplicate_catalyst_gui
+#
+
+
+
+# These are the main parameters of the treeviews, they will be applied to both treeviews.
+f_tree:
+  Heading:
+    style: Treeview.Heading
+    rowheight: 24
+    borderwidth: 5
+    font: '{Segoe UI} 9'
+
+  Tree:
+    style: 'Treeview'
+    rowheight: 24
+    borderwidth: 5
+    font: '{Segoe UI} 9'
+
+    map:
+      background:
+      - - selected
+        - '#6d6087'
+
+# Parameters here override the 'f_tree' parameters for the duplicates' tree
+d_tree:
+  Tree:
+    # This style name is not important, as the widgets parse it from this config file
+    style: 'Duplicates.Treeview'
+    rowheight: 24
+
+buttons_style:
+  # This style name is not important, as the widgets parse it from this config file
+  style: 'my.TButton'
+  font: '{Segoe UI} 9'
+  anchor: 'center'
+
+log: log_file.log
+
+logger:
+  handlers:
+  - logging.FileHandler('log_file.log', 'w', 'utf-8')
+  level: logging.DEBUG
+  format: '%(asctime)s %(message)s'
+  datefmt: '%H:%M:%S'
+
+images:
+  obj_icons:
+    img_files:
+      ico_path: images\img.png
+      extensions: [.png, .jpg, .jpeg, .tif, .tiff, .gif]
+
+    pdf_files:
+      ico_path: images\pdf.png
+      extensions: [.pdf]
+
+    txt_files:
+      ico_path: images\txt.png
+      extensions: [.txt, .py, .csv, .log, .ini]
+
+    word_files:
+      ico_path: images\word.png
+      extensions: [.doc, .docx]
+
+    xl_files:
+      ico_path: images\xl.png
+      extensions: [.xls, .xlsx]
+
+    exe_files:
+      ico_path: images\exe_file.png
+      extensions: [.exe]
+
+    unkn_files:
+      ico_path: images\unkn.png
+      extensions: []
+
+    folders:
+      ico_path: images\folder.png
+      extensions: []
+
+  app_icon_path: images\icon.png

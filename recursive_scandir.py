@@ -2,22 +2,6 @@ import os
 import logging
 import yaml
 
-
-
-# Define setting of logging for permission rejections
-# logging.basicConfig(handlers=[logging.FileHandler('log_file.log', 'w', 'utf-8')],
-#                     level=logging.DEBUG,
-#                     format='%(asctime)s %(message)s',
-#                     datefmt='%H:%M:%S'
-#                     )
-
-
-logging.basicConfig(handlers=[logging.FileHandler('log_file.log', 'w', 'utf-8')],
-                    level=logging.DEBUG,
-                    format='%(asctime)s %(message)s',
-                    datefmt='%H:%M:%S'
-                    )
-
 def recursive_scandir(path: str, config_file_path: str, recursion_limit: int=2, current_recurs_step: int=1):
         """
         This generator recursively scans a directory for files and nested directories.
@@ -46,15 +30,11 @@ def recursive_scandir(path: str, config_file_path: str, recursion_limit: int=2, 
             the first fetched object inside a nested directory. This allows visualizing the parent directory as a container
             in tkinter.treeview.
         """
-        e
         with open(config_file_path, "r") as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
-        
-        logging.basicConfig(**config['logger'])
-        
-        
+
         # Handle empty folders or denied access with try-except statement
-        # The dir_availability switch is used to simplify the code, as further another try-except is used for child objects
+        # The dir_availability switch is used to simplify the code, as further another try-except is applied for child objects
         try:
             # For a correct visualization, all the necessary objects (directories and files)
             # should be grouped by: 1. Type (directories-> files); 2. Name (A-Z)  
@@ -62,6 +42,7 @@ def recursive_scandir(path: str, config_file_path: str, recursion_limit: int=2, 
             dir_availability = True
             
         except PermissionError as permission_err:
+            logging.basicConfig(**config['logger'])
             logging.error(permission_err)
             dir_availability = False
             pass
@@ -71,10 +52,10 @@ def recursive_scandir(path: str, config_file_path: str, recursion_limit: int=2, 
                 # If the object inside the parent directory is unreachable, update the logfile and pass to the next object
                 try:
                     if object.is_dir(follow_symlinks=False):
-                        
                         yield object
                         current_recurs_step += 1
                         
+                        # Continue to scan children if the recursion counter allows it.
                         if current_recurs_step < recursion_limit or recursion_limit == 0:
                             yield from recursive_scandir(object.path,
                                                          config_file_path,
@@ -82,7 +63,6 @@ def recursive_scandir(path: str, config_file_path: str, recursion_limit: int=2, 
                                                          current_recurs_step=current_recurs_step)
                             # The recursion counter must be reset to 1 to yield the rest of the root directory
                             current_recurs_step = 1
-                        
                         else:
                             # For nested directories, yield only the first object.
                             # This crucially increases the performance
@@ -95,5 +75,6 @@ def recursive_scandir(path: str, config_file_path: str, recursion_limit: int=2, 
                     else:
                         yield object
                 except PermissionError as permission_err:
+                    logging.basicConfig(**config['logger'])
                     logging.error(permission_err)
                     pass

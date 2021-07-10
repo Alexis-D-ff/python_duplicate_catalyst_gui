@@ -3,7 +3,7 @@ from tkinter import ttk
 import pathlib
 import os
 import yaml
-from _os_duplicate_finder_v3 import Duplicates_Finder
+from os_duplicate_finder import Duplicates_Finder
 from icon_loader import file_image_loader, unknown_icon_loader
 
 class Duplicates_Navigator(ttk.Frame):
@@ -186,7 +186,7 @@ class Duplicates_Navigator(ttk.Frame):
         str_length = int(path_str_max_length * 8.1 + 30)
         field_length = str_length if str_length > def_field_length else None
         if field_length:
-            self._duplicates_tree.column('#0', anchor='w', width=field_length, stretch='no')
+            self._duplicates_tree.column('#0', anchor='w', width=field_length, stretch='yes')
         else:
             self._duplicates_tree.column('#0', anchor='w', stretch='no')
         

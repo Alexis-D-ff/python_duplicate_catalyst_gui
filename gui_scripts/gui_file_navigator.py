@@ -2,7 +2,7 @@ from tkinter import ttk
 import os
 import pathlib
 import yaml
-from recursive_scandir_v4 import recursive_scandir
+from recursive_scandir import recursive_scandir
 from icon_loader import file_image_loader, directory_image_loader, unknown_icon_loader
 
 class File_Navigator(ttk.Frame):
@@ -84,12 +84,12 @@ class File_Navigator(ttk.Frame):
         # Grid the ttk.Frame (which encapsulates treeview + scrollbar) at the main tkinter window
         self.grid(row=0,column=0, rowspan=2, padx=20, pady=(20,0), sticky='nsew')
     
-    def expand_or_open(self, object: str, event=None) -> str:
+    def expand_or_open(self, object: str=None, event=None) -> str:
         """
         This method wraps the self.refresh(), self.expand() and os.startfile() methods and is used for key binding actions.
         
         If a directory is clicked, it will be scanned by os.scandir(), visualized and expanded.
-        If a file is clicked, it will be opened by standard os program.
+        If a file is clicked, it will be opened by the standard os program.
         If a file is clicked with the alt button pressed, the parent folder will be opened in os.
         
         Args:
@@ -105,14 +105,21 @@ class File_Navigator(ttk.Frame):
             this keyword unbinds the event from the default tkinter method.
         """
         selected_object = self._tree.item(self._tree.focus())
-        if selected_object['tags'][0] == 'Directory':
+        
+        # A directory clicked without the Alt modifier should be expanded.
+        if selected_object['tags'][0] == 'Directory' and object != 'folder':
             self.refresh(clicked_directory=selected_object)
             self.expand_directory(selected_object)
             return 'break'
         
+        # A file clicked without the Alt modifier should be opened,
+        # Alt modifier should open either the clicked directory or the parent directory for a clicked file.
         else:
-            selected_file_path = selected_object['tags'][2] if object == 'file'else \
-                                                            pathlib.Path(selected_object['tags'][2]).parent
+            if object == 'folder' and selected_object['tags'][0] == 'File':
+                selected_file_path = pathlib.Path(selected_object['tags'][2]).parent
+                
+            else:
+                selected_file_path = pathlib.Path(selected_object['tags'][2])
             
             # Filter out the OS access errors. If it doesn't open - c'est la vie :)
             try:

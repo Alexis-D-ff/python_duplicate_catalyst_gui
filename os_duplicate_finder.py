@@ -1,7 +1,7 @@
 from typing import Set
 from collections import defaultdict
 from read_and_hash import read_and_hash
-from recursive_scandir_v4 import recursive_scandir
+from recursive_scandir import recursive_scandir
 import logging
 
 # Define setting of logging for permission rejections
