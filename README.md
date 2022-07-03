@@ -11,33 +11,33 @@ Any directory can be scanned for duplicates. All the duplicates are then visuali
 
 
 # Summary
-[1. Development tools](#1.-Development-tools)
+[1. Development tools](#1-development-tools)
 
-[2. Installation](#2.-Installation)
+[2. Installation](#2-installation)
 
-[3. Functionality](#3.-Functionality)
+[3. Functionality](#3-functionality)
 
-&emsp;&emsp;[3.1 Directories loading](#3-gaussian-heat-source)
+&emsp;&emsp;[3.1 Directories loading](#31-directories-loading)
 
-&emsp;&emsp;[3.2 Accessing files and directories](#3-gaussian-heat-source)
+&emsp;&emsp;[3.2 Accessing files and directories](#32-accessing-files-and-directories)
 
-&emsp;&emsp;[3.3 Finding duplicates](#3-gaussian-heat-source)
+&emsp;&emsp;[3.3 Finding duplicates](#33-finding-duplicates)
 
-&emsp;&emsp;[3.4 Permissions log file](#3-gaussian-heat-source)
+&emsp;&emsp;[3.4 Permissions log file](#34-permissions-log-file)
 
-&emsp;&emsp;[3.5 Deleting duplicates](#3-gaussian-heat-source)
+&emsp;&emsp;[3.5 Deleting duplicates](#35-deleting-duplicates)
 
-[4. Development tricks](#4-line-segment-heat-source)
+[4. Development tricks](#4-development-tricks)
 
-&emsp;&emsp;[4.1 Recursive os.scandir()](#3-gaussian-heat-source)
+&emsp;&emsp;[4.1 Recursive os.scandir()](#41-recursive-osscandir)
 
-&emsp;&emsp;[4.2 Duplicates detection with SHA](#3-gaussian-heat-source)
+&emsp;&emsp;[4.2 Duplicates detection with SHA](#42-duplicates-detection-with-sha)
 
-&emsp;&emsp;[4.3 Collisions](#4.3-Collisions)
+&emsp;&emsp;[4.3 Collisions](#43-collisions)
 
-[5. Credentials](#5.-Credentials)
+[5. Credentials](#5-credentials)
 
-[6. Footnotes](#6.-Footnotes)
+[6. Footnotes](#6-footnotes)
 
 ## Acknoledgement
 This app was inspired once by a colleague of mine when I did my thesis. He just asked me one day "Hey, I have a folder, there are hundreds of files inside it and there are also some damn duplicates, named differently, in different subfolders. Can't you make a small python script to find all of them?"
@@ -128,12 +128,12 @@ If the directory is empty or contains no duplicates, the appropriate message wil
 
 The duplicates widget, as the file navigator, allows accessing the files and their parent directories with double click for files:
 <p align="center">
-<img src="https://drive.google.com/uc?export=view&id=1amKWCq6sUB8KzgRIIclMGk7BMBVjiBPd">
+<img src="https://drive.google.com/uc?export=view&id=1zHbqIJ3EOWcl1pPyyKAgJjSjLbxcJD6n">
 </p>
 
 or ALt + double click for the parent directory:
 <p align="center">
-<img src="https://drive.google.com/uc?export=view&id=1Isr93OBGSPmz_SosedhPFATWjs_n5puC">
+<img src="https://drive.google.com/uc?export=view&id=1DUL18AIU28-kkESzsH5vxy8zi01TZkgY">
 </p>
 
 ### 3.4 Permissions log file
@@ -144,7 +144,7 @@ The grayed "Access Permission File" button becomes available if any OSPermission
 
 Exceptions can be captures during scanning of the duplicates, or just loading of the directory:
 <p align="center">
-<img src="https://drive.google.com/uc?export=view&id=1vfahqJcyefF0fUig5uHUOETAkOx-SUqV">
+<img src="https://drive.google.com/uc?export=view&id=1e-sWXT6Y3U0GEY59ufl2OFqb25Rztt3l">
 </p>
 
 The log file name and path are defined in the `config.yaml` file. The file resets after each app session, but the lines are added for all duplicate scanning or folder openings exceptions during one app session.
@@ -248,7 +248,7 @@ You can also change the hash algorithm (it is the `hash_func` keyword argument o
 
 At this example a standard `.doc` file was modified by a single symbol and duplicates scanning was launched. No duplicates detected, as it suppose to be:
 <p align="center">
-<img src="https://drive.google.com/uc?export=view&id=1-_HHRAlrLBzihIt79p_RcqcOmhG1oYCh">
+<img src="https://drive.google.com/uc?export=view&id=1k0tYccr3Y9NpfOtL5NSpBBar9oYivM4E">
 </p>
 
 ## 5. Credentials
