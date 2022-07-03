@@ -13,8 +13,8 @@ logging.basicConfig(handlers=[logging.FileHandler('log_file.log', 'w', 'utf-8')]
 
 class Duplicates_Finder():
     """
-    This class scans the root directory, extracts paths to all files in all subdirectories
-    and finds the duplicates during scanning.
+    This class allows scanning the root directory, extracting paths to all files in all subdirectories
+    and finding the duplicates during scanning.
     """
     def __init__(self, paths: Set[str], config_file_path: str):
         """
